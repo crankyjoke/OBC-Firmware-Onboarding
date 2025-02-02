@@ -2,7 +2,6 @@
 #include "i2c_io.h"
 #include "errors.h"
 #include "logging.h"
-
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
@@ -27,8 +26,26 @@ error_code_t lm75bdInit(lm75bd_config_t *config) {
 
 error_code_t readTempLM75BD(uint8_t devAddr, float *temp) {
   /* Implement this driver function */
-  
+  error_code_t error;
+  uint8_t regVal[1] = {0};
+  uint8_t temperature_byte[2] = {0};
+  error = i2cSendTo(devAddr,regVal,1);
+  if(error != ERR_CODE_SUCCESS) {
+    return error;
+  }
+  error = i2cReceiveFrom(devAddr, temperature_byte, 2);
+  if(error != ERR_CODE_SUCCESS) {
+    return error;
+  }
+
+  int data = temperature_byte[0];
+  if((1<<7)&data) {
+    data -= 2*(1<<7);
+  }
+  data = (data<<3)|(temperature_byte[1]>>5);
+  *temp = (float) data*0.125;
   return ERR_CODE_SUCCESS;
+
 }
 
 #define CONF_WRITE_BUFF_SIZE 2U
