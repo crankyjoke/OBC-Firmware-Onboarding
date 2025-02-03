@@ -65,8 +65,7 @@ static void thermalMgr(void *pvParameters) {
       data = *(lm75bd_config_t *)pvParameters;
 
       float temp_c;
-      readTempLM75BD(data.devAddr, &temp_c);
-      error_code_t errCode = readTempLM75BD(LM75BD_OBC_I2C_ADDR, &temp_c);
+      error_code_t errCode = readTempLM75BD(data.devAddr, &temp_c);
       if(errCode != ERR_CODE_SUCCESS) {
         LOG_ERROR_CODE(errCode);
         continue;
