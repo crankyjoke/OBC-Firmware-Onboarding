@@ -4,6 +4,7 @@
 #include "console.h"
 
 #include <FreeRTOS.h>
+#include <logging.h>
 #include <os_task.h>
 #include <os_queue.h>
 
@@ -43,8 +44,8 @@ void initThermalSystemManager(lm75bd_config_t *config) {
 
 error_code_t thermalMgrSendEvent(thermal_mgr_event_t *event) {
   /* Send an event to the thermal manager queue */
-  if(event  == NULL || thermalMgrQueueHandle == NULL) return ERR_CODE_INVALID_ARG;
-  xQueueSend(thermalMgrQueueHandle, event, portMAX_DELAY);
+  if(event  == NULL || thermalMgrQueueHandle == NULL) return ERR_CODE_INVALID_STATE;
+  if(xQueueSend(thermalMgrQueueHandle, event, portMAX_DELAY) != pdPASS) return ERR_CODE_QUEUE_FULL;
   return ERR_CODE_SUCCESS;
 }
 
@@ -65,6 +66,14 @@ static void thermalMgr(void *pvParameters) {
 
       float temp_c;
       readTempLM75BD(data.devAddr, &temp_c);
+      error_code_t errCode = readTempLM75BD(LM75BD_OBC_I2C_ADDR, &temp_c);
+      if(errCode != ERR_CODE_SUCCESS) {
+        LOG_ERROR_CODE(errCode);
+        continue;
+      }
+
+
+
       if (event.type == THERMAL_MGR_EVENT_MEASURE_TEMP_CMD) {
         addTemperatureTelemetry(temp_c);
       } else if (event.type == THERMAL_MGR_EVENT_INTERRUPT) {
